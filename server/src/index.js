@@ -31,3 +31,5 @@ DBConnection()
 .catch((error) => {
     console.log("MongoDB Connection Error !!!",error);
 })
+
+app.use("/api/v1/upload",)
