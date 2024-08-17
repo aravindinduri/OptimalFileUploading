@@ -4,9 +4,7 @@ function FIleUpload() {
   return (
     <>
     <h1>Upload Files</h1>
-    <form action="">
       
-    </form>
     </>
   )
 }
