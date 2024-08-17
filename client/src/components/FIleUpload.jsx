@@ -2,7 +2,12 @@ import React from 'react'
 
 function FIleUpload() {
   return (
-    <div>FIleUpload</div>
+    <>
+    <h1>Upload Files</h1>
+    <form action="">
+      
+    </form>
+    </>
   )
 }
 
