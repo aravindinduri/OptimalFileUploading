@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from 'dotenv';
 import DBConnection from './Database/db.js'
+import FileRoutes from './routes/routes.js'
 dotenv.config({path:'./env'});
 
 
@@ -32,4 +33,4 @@ DBConnection()
     console.log("MongoDB Connection Error !!!",error);
 })
 
-app.use("/api/v1/upload",)
+app.use("/api/v1/",FileRoutes)
