@@ -19,7 +19,7 @@ const FileUpload = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        setLoading(true); // Set loading to true when starting upload
+        setLoading(true); 
 
         try {
             const response = await axios.post('/api/v1/upload', formData, {
@@ -31,7 +31,7 @@ const FileUpload = () => {
         } catch (error) {
             setMessage(`Error: ${error.response?.data.message || error.message}`);
         } finally {
-            setLoading(false); // Set loading to false when upload is done
+            setLoading(false); 
         }
     };
 

@@ -13,7 +13,6 @@ app.use(cors({
     origin : process.env.CORS_ORIGIN,
     credentials :true,
     methods: ['POST', 'GET', 'DELETE', 'PUT'],
-    exposedHeaders: ["set-cookie"],
 }));
 
 app.use(express.json({limit :"20kb"}));
@@ -32,5 +31,9 @@ DBConnection()
 .catch((error) => {
     console.log("MongoDB Connection Error !!!",error);
 })
+
+app.get('/test', (req, res) => {
+  res.json({ message: "Test route working!" });
+});
 
 app.use("/api/v1/",FileRoutes)

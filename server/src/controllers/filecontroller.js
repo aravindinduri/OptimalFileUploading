@@ -1,10 +1,10 @@
+import File from '../models/filemodel.js';
+import { uploadOnCloudinary } from '../utils/cloudinary.js';
 import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 import sharp from 'sharp';
 import util from 'util';
-import File from '../models/filemodel.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
 const gzip = util.promisify(zlib.gzip);
 
@@ -15,7 +15,6 @@ const compressImage = async (filePath) => {
         .jpeg({ quality: 70 }) 
         .toFile(compressedPath);
 
-    // If size is still greater than 6 MB, recompress with lower quality
     if (size > 6 * 1024 * 1024) {
         await sharp(compressedPath)
             .jpeg({ quality: 50 })
@@ -30,7 +29,7 @@ const compressOtherFile = async (filePath) => {
     const fileData = fs.readFileSync(filePath);
     let compressedData = await gzip(fileData);
 
-    while (compressedData.length > 1 * 1024 * 1024) {
+    while (compressedData.length > 4 * 1024 * 1024) {
         compressedData = await gzip(compressedData.slice(0, Math.floor(compressedData.length * 0.8)));
         console.log(compressedData.length)
     }
@@ -57,7 +56,6 @@ const FileUpload = async (req, res) => {
 
         const uploadResult = await uploadOnCloudinary(filePath);
         console.log(uploadResult)
-        fs.statSync(filePath).size
         const newFile = new File({
             name: file.originalname,
             url: uploadResult.url,
