@@ -1,14 +1,47 @@
-import multer from "multer";
+import multer from 'multer';
+import path from 'path';
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, "./public")
+    destination: (req, file, cb) => {
+        cb(null, './public'); 
     },
-    filename: function (req, file, cb) {
-      cb(null, file.originalname)
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${path.basename(file.originalname)}`); 
     }
-  })
-  
-export const upload = multer({ 
-    storage, 
-})
+});
+
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const mimeType = allowedTypes.test(file.mimetype);
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimeType && extname) {
+        return cb(null, true);
+    } else {
+        cb(new Error('Only images and PDFs are allowed'));
+    }
+};
+
+const upload = multer({
+    storage,
+    fileFilter,
+});
+
+export default upload;
+
+
+// import multer from "multer";
+
+// const storage = multer.diskStorage({
+//     destination: function (req, file, cb) {
+//       cb(null, "./public")
+//     },
+//     filename: function (req, file, cb) {
+      
+//       cb(null, file.originalname)
+//     }
+//   })
+// const upload = multer({ 
+//     storage, 
+// })
+
+// export default upload

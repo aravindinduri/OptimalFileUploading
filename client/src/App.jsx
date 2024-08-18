@@ -1,10 +1,10 @@
 import React from 'react';
+import FileUpload from './components/FIleUpload';
 import DisplayFiles from './components/DisplayFiles';
-import FIleUpload from './components/FIleUpload';
 function App() {
     return (
         <div>
-            <FIleUpload/>
+            <FileUpload/>
             <DisplayFiles/>
         </div>
     );

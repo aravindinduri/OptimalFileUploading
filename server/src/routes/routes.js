@@ -1,11 +1,10 @@
 import { Router } from "express";
-import {
-   
-} from "../controllers/filecontroller"
+import { FileUpload, getAllFiles } from "../controllers/filecontroller.js";
+import upload from '../middlewares/multermiddleware.js';
 
 const router = Router();
 
-router.route("/upload").post();
-router.route("/retrive").get();
+router.route("/upload").post(upload.single('file'),FileUpload);
+router.route("/retrieve").get(getAllFiles);
 
-export default router
+export default router;

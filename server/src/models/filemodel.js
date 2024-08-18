@@ -1,30 +1,13 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from 'mongoose';
 
-const mongoose = require('mongoose');
-
-const FileSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-    },
-    url: {
-        type: String,
-        required: true,
-    },
-    type: {
-        type: String,
-        required: true,
-    },
-    size: {
-        type: Number,
-        required: true,
-    },
-
-},
-    {
-        timestamps: true
-    }
+const fileSchema = new mongoose.Schema({
+  name: String,
+  url: String,  
+  size: Number,
+  contentType: String,
+}
 );
 
-export const File = mongoose.model('File', FileSchema);
+const File = mongoose.model('File', fileSchema);
 
+export default File;
