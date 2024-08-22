@@ -1,89 +1,82 @@
 import File from '../models/filemodel.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase/firebase.js';
 import fs from 'fs';
 import path from 'path';
-import zlib from 'zlib';
 import sharp from 'sharp';
-import util from 'util';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
-const gzip = util.promisify(zlib.gzip);
+const execPromise = promisify(exec);
 
 const compressImage = async (filePath) => {
     const compressedPath = path.join(path.dirname(filePath), `compressed-${path.basename(filePath)}`);
-    const { size } = await sharp(filePath)
-        .resize({ width: 1920 }) 
-        .jpeg({ quality: 70 }) 
+    await sharp(filePath)
+        .resize({ width: 1920 })
+        .jpeg({ quality: 40 })
         .toFile(compressedPath);
-
-    if (size > 6 * 1024 * 1024) {
-        await sharp(compressedPath)
-            .jpeg({ quality: 50 })
-            .toFile(compressedPath);
-    }
-
     return compressedPath;
 };
 
-const compressOtherFile = async (filePath) => {
-    const compressedPath = path.join(path.dirname(filePath), `compressed-${path.basename(filePath)}.gz`);
-    const fileData = fs.readFileSync(filePath);
-    let compressedData = await gzip(fileData);
+const compressPDFWithGhostscript = async (inputPath, outputPath) => {
+    const command = `gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile=${outputPath} ${inputPath}`;
+    await execPromise(command);
+    return outputPath;
+};
 
-    while (compressedData.length > 4 * 1024 * 1024) {
-        compressedData = await gzip(compressedData.slice(0, Math.floor(compressedData.length * 0.8)));
-        console.log(compressedData.length)
-    }
-    fs.writeFileSync(compressedPath, compressedData);
-    return compressedPath;
+const uploadFileToFirebase = async (filePath, originalName) => {
+    const fileRef = ref(storage, originalName);
+    const fileData = fs.readFileSync(filePath);
+    await uploadBytes(fileRef, fileData);
+    return getDownloadURL(fileRef);
 };
 
 const FileUpload = async (req, res) => {
     try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded.' });
+        }
+
         const file = req.file;
-        if (!file) {
-            return res.status(400).json({ message: "No file uploaded" });
-        }
-
+        let { originalname: name, mimetype: type, size } = file;
         let filePath = file.path;
+        let compressedFilePath = filePath;
 
-        if (file.size > 6 * 1024 * 1024) { 
-            if (file.mimetype.startsWith('image/')) {
-                filePath = await compressImage(filePath);
-            } else {
-                filePath = await compressOtherFile(filePath);
-            }
+        if (type === 'application/pdf') {
+            const outputPath = path.join(path.dirname(filePath), `compressed-${path.basename(filePath)}`);
+            compressedFilePath = await compressPDFWithGhostscript(filePath, outputPath);
+            size = fs.statSync(compressedFilePath).size;
+        } else if (type.startsWith('image/')) {
+            compressedFilePath = await compressImage(filePath);
+            size = fs.statSync(compressedFilePath).size;
         }
 
-        const uploadResult = await uploadOnCloudinary(filePath);
-        console.log(uploadResult)
+        const url = await uploadFileToFirebase(compressedFilePath, name);
         const newFile = new File({
-            name: file.originalname,
-            url: uploadResult.url,
-            size: fs.statSync(filePath).size, 
-            contentType: file.mimetype,
+            name,
+            url,
+            size,
+            contentType: type,
         });
 
         await newFile.save();
 
-        return res.status(201).json({ file: newFile, message: "File uploaded successfully" });
-
+        return res.status(201).json({ message: 'File uploaded and compressed successfully.', file: newFile });
     } catch (error) {
-        return res.status(500).json({ message: "Error occurred while uploading the file", error });
+        console.error('Error uploading and compressing file:', error);
+        return res.status(500).json({ message: 'Internal server error.' });
     }
 };
+
 
 const getAllFiles = async (req, res) => {
     try {
         const files = await File.find();
-        if (files.length === 0) {
-            return res.status(404).json({ message: "No files found" });
-        }
 
-        return res.status(200).json({ files, message: "Files retrieved successfully" });
-
+        res.status(200).json({ files: files, message: "Files retrieved successfully" });
     } catch (error) {
-        return res.status(500).json({ message: "Error occurred while retrieving files", error: error.message });
+        res.status(500).json({ message: "Failed to retrieve files" });
     }
 };
 
-export { getAllFiles, FileUpload };
+export { FileUpload, getAllFiles };

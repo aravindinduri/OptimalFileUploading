@@ -7,16 +7,18 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET 
 });
 
-const uploadOnCloudinary = async (localFilePath, resourceType = 'auto') => {
+const uploadOnCloudinary = async (localFilePath) => {
     try {
         if (!localFilePath) return null;
+
+        const type = localFilePath.endsWith('.pdf') ? 'raw' : 'image';
         
         const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: 'auto',
+            resource_type: type, 
+            pages: type === 'raw' ? true : false,
         });
 
-        console.log("File uploaded to Cloudinary:"
-        );
+        console.log("File uploaded to Cloudinary:", response.url);
         fs.unlinkSync(localFilePath); 
         return response;
 
